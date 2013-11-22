@@ -256,7 +256,7 @@ void handleButton(int id)
   }
   else if (oper.equals("GET"))
   {
-    sprintf(tmp,"/app/accel/%d/v",id);
+    sprintf(tmp,"/app/button/%d/v",id);
     if (resource.equals(tmp))
     {
       int value;
@@ -303,6 +303,170 @@ void handleButton(int id)
   }
 }
 
+void handleBuzzer(int id)
+{
+  char tmp[32];
+  if (0!=id)
+  {
+    Serial.println("Invalid Resource ID");
+    return;
+  }
+  if (oper.equals("SET"))
+  {
+    sprintf(tmp,"/app/buzzer/%d/v",id);
+    if (resource.equals(tmp))
+    {
+      analogWrite(BUZZER0, parameters.toInt());
+      Serial.println("OK");
+    }
+    else
+    {
+      Serial.println("Invalid Resource");
+      return;
+    } 
+  }
+  else if (oper.equals("GET"))
+  {
+    sprintf(tmp,"/app/buzzer/%d/v",id);
+    if (resource.equals(tmp))
+    {
+      int value
+      value=analogRead(BUZZER0);
+      Serial.print(tmp);
+      Serial.print(" ");
+      Serial.print(value);
+      Serial.println("");
+    }
+    else
+    {
+      Serial.println("Invalid Operator");
+      return;
+    } 
+  }
+  else if (oper.equals("EXECUTE"))
+  {
+    Serial.println("Invalid Operator");
+    return;
+  }
+}
+
+void handleLed(int id)
+{
+  char tmp[32];
+  if (0!=id)
+  {
+    Serial.println("Invalid Resource ID");
+    return;
+  }
+  if (oper.equals("SET"))
+  {
+    sprintf(tmp,"/app/led/%d/v",id);
+    if (resource.equals(tmp))
+    {
+      analogWrite(BUZZER0, parameters.toInt());
+      Serial.println("OK");
+    }
+    else
+    {
+      Serial.println("Invalid Resource");
+      return;
+    } 
+  }
+  else if (oper.equals("GET"))
+  {
+    sprintf(tmp,"/app/led/%d/v",id);
+    if (resource.equals(tmp))
+    {
+      int value
+      int led;
+      switch(id)
+      {
+        case 0:
+        {
+          led=LED0;
+          break;
+        } 
+        case 1:
+        {
+          led=LED1;
+          break;
+        } 
+        case 2:
+        {
+          led=LED2;
+          break;
+        } 
+        case 3:
+        {
+          led=LED3;
+          break;
+        } 
+        case 4:
+        {
+          led=LED4;
+          break;
+        }
+      }
+      value=digitalWrite(led,paramaters.toInt());
+      Serial.println("OK");
+    }
+    else
+    {
+      Serial.println("Invalid Operator");
+      return;
+    } 
+  }
+  else if (oper.equals("EXECUTE"))
+  {
+    Serial.println("Invalid Operator");
+    return;
+  }
+}
+
+
+void handleLight(int id)
+{
+  char tmp[32];
+  if (0 != id)
+  {
+    Serial.println("Invalid Resource ID");
+    return;
+  }
+  if (oper.equals("SET"))
+  {
+    sprintf(tmp,"/app/light/%d/r",id);
+    if (resource.equals(tmp))
+    {
+      reportLight = parameters.toInt();
+      Serial.println("OK");
+    }
+    else
+    {
+      Serial.println("Invalid Resource");
+      return;
+    } 
+  }
+  else if (oper.equals("GET"))
+  {
+    sprintf(tmp,"/app/light/%d/v",id);
+    if (resource.equals(tmp))
+    {
+      printLight(true, tmp);
+    }
+    else
+    {
+      Serial.println("Invalid Operator");
+      return;
+    } 
+  }
+  else if (oper.equals("EXECUTE"))
+  {
+    Serial.println("Invalid Operator");
+    return;
+  }
+}
+
+
 void handleApp(void)
 {
   int id;
@@ -326,18 +490,22 @@ void handleApp(void)
       handleAccel(id);
     }
     else if (resource.startsWith("/app/button/"))
-    { 
+    {
+      handleButton(id);
     }
     else if (resource.startsWith("/app/buzzer/"))
     { 
+      handleBuzzer(id);
     }
     else if (resource.startsWith("/app/led/"))
     {
+      handleLed(id);
     }
     else if (resource.startsWith("/app/light/"))
-    { 
+    {
+      handleLight(id);
     }
-    else if (resource.startsWith("/apprgb/"))
+    else if (resource.startsWith("/app/rgb/"))
     { 
     }
     else if (resource.startsWith("/app/servo/"))
