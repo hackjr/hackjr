@@ -1,3 +1,5 @@
+#include "pitches.h"
+
 #define MAX(a,b) ((a>b)?a:b) 
 #define MIN(a,b) ((a<b)?a:b)
  
@@ -25,7 +27,7 @@ int SWITCH1   = 8;
 
 /* Analog In */
 int PHOTO_RESISTOR0 = A5;
-int PONTENTIOMETER0 = A0;
+int POTENTIOMETER0 = A0;
 int ACCEL0_X        = A1;
 int ACCEL0_Y        = A2;
 int ACCEL0_Z        = A3;
@@ -36,10 +38,11 @@ String parameters      = "";
 String inputString     = "";         // a string to hold incoming data
 volatile boolean stringComplete = false;  // whether the string is complete
 
-volatile boolean reportAccel  = false;
+volatile boolean reportAccel  = true;
 volatile boolean reportButton = true;
 volatile boolean reportLight  = true;
 volatile boolean reportSwitch = true;
+volatile boolean reportPot    = true;
 volatile boolean reportTemp   = false;
 
 volatile boolean button0Value = false;
@@ -50,6 +53,7 @@ volatile boolean button3Value = false;
 volatile int     light0Value;
 volatile int     switch0Value;
 volatile int     switch1Value;
+volatile int     pot0Value;
 
 volatile int     accel_x;
 volatile int     accel_y;
@@ -127,6 +131,20 @@ void printLight(boolean force, char *tmp)
   }
 }
 
+void printPot(boolean force, char *tmp)
+{
+  int v;
+  v = (analogRead(POTENTIOMETER0)/4)-128;
+  if ((true == force)
+      || ((pot0Value-v)< 1) 
+      || ((pot0Value-v)> 1)
+     )
+  {
+     Serial.print("/app/pot/0/v ");
+     Serial.println(v);
+     pot0Value = v;
+  }
+}
 
 void printTemp(boolean force, char *tmp)
 {
@@ -198,6 +216,8 @@ void setup()
   switch1Value = digitalRead(SWITCH1);
 
   light0Value  = (analogRead(PHOTO_RESISTOR0)/4);
+  
+  pot0Value    = (analogRead(POTENTIOMETER0)/4)-128;
   
   accel_x = (analogRead(ACCEL0_X)/4)-128;
   accel_y = (analogRead(ACCEL0_Y)/4)-128;
@@ -325,17 +345,45 @@ void handleButton(int id)
 void handleBuzzer(int id)
 {
   char tmp[32];
-  if (0!=id)
+  int buzzer;
+  
+  switch(id)
   {
-    Serial.println("Invalid Resource ID");
-    return;
-  }
+    case 0:
+    {
+      buzzer=BUZZER0;
+      break;
+    } 
+    default:
+    {
+      Serial.println("Invalid Resource ID");
+      return;
+    }
+  } 
   if (oper.equals("SET"))
   {
     sprintf(tmp,"/app/buzzer/%d/v",id);
     if (resource.equals(tmp))
     {
-      tone(BUZZER0, parameters.toInt());
+      int durationIndex;
+      int frequency, duration;
+      
+      durationIndex = parameters.indexOf(" ",1);
+      frequency = parameters.toInt();
+      duration  = parameters.substring(durationIndex).toInt();
+      noTone(buzzer);
+      
+      if (frequency > 0)
+      {
+        if (duration > 0)
+        {
+          tone(buzzer, frequency, duration);
+        }
+        else
+        {
+          tone(buzzer, frequency);
+        }
+      }
       Serial.println("OK");
     }
     else
@@ -346,11 +394,12 @@ void handleBuzzer(int id)
   }
   else if (oper.equals("GET"))
   {
+#if 0
     sprintf(tmp,"/app/buzzer/%d/v",id);
     if (resource.equals(tmp))
     {
       int value;
-      value=analogRead(BUZZER0);
+      value=analogRead(buzzer);
       Serial.print(tmp);
       Serial.print(" ");
       Serial.print(value);
@@ -361,6 +410,10 @@ void handleBuzzer(int id)
       Serial.println("Invalid Resource");
       return;
     } 
+#else
+    Serial.println("Invalid Operator");
+    return;
+#endif
   }
   else if (oper.equals("EXECUTE"))
   {
@@ -489,6 +542,48 @@ void handleLight(int id)
   }
 }
 
+void handlePot(int id)
+{
+  char tmp[32];
+  if (0 != id)
+  {
+    Serial.println("Invalid Resource ID");
+    return;
+  }
+  if (oper.equals("SET"))
+  {
+    sprintf(tmp,"/app/pot/%d/r",id);
+    if (resource.equals(tmp))
+    {
+      reportPot = parameters.toInt();
+      Serial.println("OK");
+    }
+    else
+    {
+      Serial.println("Invalid Resource");
+      return;
+    } 
+  }
+  else if (oper.equals("GET"))
+  {
+    sprintf(tmp,"/app/pot/%d/v",id);
+    if (resource.equals(tmp))
+    {
+      printPot(true, tmp);
+    }
+    else
+    {
+      Serial.println("Invalid Resource");
+      return;
+    } 
+  }
+  else if (oper.equals("EXECUTE"))
+  {
+    Serial.println("Invalid Operator");
+    return;
+  }
+}
+
 void handleRgb(int id)
 {
   char tmp[32];
@@ -505,9 +600,9 @@ void handleRgb(int id)
       int greenIndex,blueIndex;
       greenIndex = parameters.indexOf(" ",1);
       blueIndex = parameters.indexOf(" ",1+greenIndex);
-      analogWrite(255 - RGB0_RED, parameters.toInt());
-      analogWrite(255- RGB0_GREEN, parameters.substring(greenIndex).toInt());
-      analogWrite(255- RGB0_BLUE, parameters.substring(blueIndex).toInt());
+      analogWrite(RGB0_RED, 255 - parameters.toInt());
+      analogWrite(RGB0_GREEN, 255 - parameters.substring(greenIndex).toInt());
+      analogWrite(RGB0_BLUE, 255 - parameters.substring(blueIndex).toInt());
       Serial.println("OK");
     }
     else
@@ -518,6 +613,7 @@ void handleRgb(int id)
   }
   else if (oper.equals("GET"))
   {
+#if 0
     sprintf(tmp,"/app/rgb/%d/v",id);
     if (resource.equals(tmp))
     {
@@ -527,8 +623,10 @@ void handleRgb(int id)
       Serial.print(" ");
       value=analogRead(RGB0_RED);
       Serial.print(255-value);
+      Serial.print(" ");
       value=analogRead(RGB0_GREEN);
       Serial.print(255-value);
+      Serial.print(" ");
       value=analogRead(RGB0_BLUE);
       Serial.print(255-value);
       Serial.println("");
@@ -537,7 +635,11 @@ void handleRgb(int id)
     {
       Serial.println("Invalid Resource");
       return;
-    } 
+    }
+#else
+    Serial.println("Invalid Operator");
+    return;
+#endif
   }
   else if (oper.equals("EXECUTE"))
   {
@@ -571,6 +673,7 @@ void handleServo(int id)
   }
   else if (oper.equals("GET"))
   {
+#if 0
     sprintf(tmp,"/app/servo/%d/v",id);
     if (resource.equals(tmp))
     {
@@ -586,6 +689,10 @@ void handleServo(int id)
       Serial.println("Invalid Resource");
       return;
     } 
+#else
+    Serial.println("Invalid Operator");
+    return;
+#endif
   }
   else if (oper.equals("EXECUTE"))
   {
@@ -742,6 +849,10 @@ void handleApp(void)
     {
       handleLight(id);
     }
+    else if (resource.startsWith("/app/pot/"))
+    {
+      handlePot(id);
+    }
     else if (resource.startsWith("/app/rgb/"))
     {
       handleRgb(id); 
@@ -855,6 +966,10 @@ void loop()
   {
     printLight(false, "/app/light/0/v");
   }
+  if (reportPot)
+  {
+    printPot(false, "/app/pot/0/v");
+  }
   if (reportSwitch)
   {
      int tmp;
@@ -901,8 +1016,6 @@ void loop()
  response.  Multiple bytes of data may be available.
  */
 void serialEvent() {
-  
-  digitalWrite(LED1, 1);
   while (Serial.available()) {
     // get the new byte:
     char inChar = (char)Serial.read();
