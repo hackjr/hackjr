@@ -27,7 +27,7 @@ void button1_interrupt(void)
   }
   else
   {
-    Serial.println(0);    
+    Serial.println(0);
   }
 }
 #endif
@@ -81,11 +81,13 @@ void handleButton(int id)
       
   switch(id)
   {
+#ifdef USE_BUTTON0
     case 0:
     {
       button=BUTTON0;
       break;
-    } 
+    }
+#endif
     case 1:
     {
       button=BUTTON1;
@@ -147,6 +149,7 @@ void handleButton(int id)
   }
 }
 
+#ifndef _SAM3XA_
 void handleBuzzer(int id)
 {
   char tmp[32];
@@ -226,6 +229,7 @@ void handleBuzzer(int id)
     return;
   }
 }
+#endif
 
 void handleLed(int id)
 {
@@ -453,7 +457,7 @@ void handleRgb(int id)
   }
 }
 
-#if 0
+#ifdef USE_SERVO0
 void handleServo(int id)
 {
   char tmp[32];
@@ -467,7 +471,7 @@ void handleServo(int id)
     sprintf(tmp,"/app/servo/%d/v",id);
     if (resource.equals(tmp))
     {
-      tone(SERVO0, parameters.toInt());
+      servo0Value = parameters.toInt();
       Serial.println("OK");
     }
     else
@@ -478,7 +482,6 @@ void handleServo(int id)
   }
   else if (oper.equals("GET"))
   {
-#if 0
     sprintf(tmp,"/app/servo/%d/v",id);
     if (resource.equals(tmp))
     {
@@ -486,7 +489,7 @@ void handleServo(int id)
       value=analogRead(SERVO0);
       Serial.print(tmp);
       Serial.print(" ");
-      Serial.print(value);
+      Serial.print(servo0Value);
       Serial.println("");
     }
     else
@@ -494,10 +497,6 @@ void handleServo(int id)
       Serial.println("Invalid Resource");
       return;
     } 
-#else
-    Serial.println("Invalid Operator");
-    return;
-#endif
   }
   else if (oper.equals("EXECUTE"))
   {
@@ -642,10 +641,12 @@ void handleApp(void)
     {
       handleButton(id);
     }
+#ifndef _SAM3A_
     else if (resource.startsWith("/app/buzzer/"))
     { 
       handleBuzzer(id);
     }
+#endif
     else if (resource.startsWith("/app/led/"))
     {
       handleLed(id);
@@ -662,7 +663,7 @@ void handleApp(void)
     {
       handleRgb(id); 
     }
-#if 0
+#ifdef USE_SERVO0
     else if (resource.startsWith("/app/servo/"))
     {
       handleServo(id); 

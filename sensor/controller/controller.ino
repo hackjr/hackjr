@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 #include "pitches.h"
 #include "controller.h"
 
@@ -17,7 +19,9 @@ volatile boolean reportSwitch = true;
 volatile boolean reportPot    = true;
 volatile boolean reportTemp   = false;
 
+#ifdef USE_BUTTON0
 volatile boolean button0Value = false;
+#endif
 volatile boolean button1Value = false;
 volatile boolean button2Value = false;
 volatile boolean button3Value = false;
@@ -30,6 +34,11 @@ volatile int     pot0Value    = 0;
 volatile int     accel_x      = 0;
 volatile int     accel_y      = 0;
 volatile int     accel_z      = 0;
+
+#ifdef USE_SERVO0
+volatile int    servo0Value   = 0;
+Servo servo0;
+#endif
 
 void printAccel(boolean force, char *tmp)
 {
@@ -116,7 +125,7 @@ void setup()
   pinMode(LED4, OUTPUT);
 
   // Initialize the digital input pins  
-  pinMode(BUTTON0, INPUT_PULLUP);
+//  pinMode(BUTTON0, INPUT_PULLUP);
   pinMode(BUTTON1, INPUT_PULLUP);
   pinMode(BUTTON2, INPUT_PULLUP);
   pinMode(BUTTON3, INPUT_PULLUP);
@@ -132,6 +141,11 @@ void setup()
   digitalWrite(LED2, LOW);
   digitalWrite(LED3, LOW);
   digitalWrite(LED4, LOW);
+
+#ifdef USE_SERVO0
+  servo0.attach(SERVO0);
+  servo0.write(0);
+#endif
   
   // initialize serial communication at 9600 bits per second:
   Serial.begin(9600);
@@ -146,8 +160,10 @@ void setup()
   parameters      = "";
   inputString     = ""; 
   
-  button0Value = digitalRead(BUTTON2);
-  button1Value = digitalRead(BUTTON3);
+#ifdef USE_BUTTON0
+  button0Value = digitalRead(BUTTON0);
+#endif
+  button1Value = digitalRead(BUTTON1);
   button2Value = digitalRead(BUTTON2);
   button3Value = digitalRead(BUTTON3);
   
@@ -177,10 +193,15 @@ void loop()
   {
     printAccel(false, "/app/accel/0/v");
   }
+
+#ifdef USE_SERVO0
+  servo0.write(servo0Value);
+#endif
   
   if(reportButton)
   {
      int tmp;
+#ifdef USE_BUTTON0
      tmp = digitalRead(BUTTON0);
      if (tmp != button0Value)
      {
@@ -189,6 +210,7 @@ void loop()
        Serial.println(tmp);
        button0Value = tmp;
      }
+#endif
      tmp = digitalRead(BUTTON1);
      if (tmp != button1Value)
      {

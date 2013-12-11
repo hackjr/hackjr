@@ -1,5 +1,13 @@
 #ifndef _CONTROLLER_H_
 #define _CONTROLLER_H_
+
+#define USE_BUTTON0
+//#define USE_SERVO0
+
+#ifdef USE_SERVO0
+#undef USE_BUTTON0
+#endif
+
 // Digital Output
 #define RGB0_RED    13 /*Red PWM*/
 #define RGB0_GREEN  11 /*Green PWM*/
@@ -12,9 +20,14 @@
 #define LED4       5 /*PWM*/
 
 #define BUZZER0  0 /*PWM*/
+#ifdef USE_SERVO0
+#define SERVO0   3 /*PWM*/ 
+#endif
 
 // Digital Input
+#ifdef USE_BUTTON0
 #define BUTTON0    3  /*Interrupt capable*/
+#endif
 #define BUTTON1    2  /*Interrupt capable*/
 #define BUTTON2    A4 /*Analog A4 is being stolen for digital usage */
 #define BUTTON3    4
